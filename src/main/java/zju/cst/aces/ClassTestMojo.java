@@ -139,6 +139,8 @@ public class ClassTestMojo extends AbstractMojo {
 
     @Parameter(property = "fullFM", defaultValue = "false")
     public boolean fullFM;
+    @Parameter(property = "ctext")
+    private String ctext;
     // ------------------------------------------
 
     @Component(hint = "default")
@@ -168,7 +170,7 @@ public class ClassTestMojo extends AbstractMojo {
         File effectivePromptDir = promptPath;
         if ("HITS".equalsIgnoreCase(phaseType)) {
             try {
-                effectivePromptDir = prepareHitsPromptDir(promptPath, log, lines, onlyTargetLines, fullFM, this.project, this.selectClass);
+                effectivePromptDir = effectivePromptDir = prepareHitsPromptDir(promptPath, log, lines, onlyTargetLines, fullFM, this.project, this.selectClass, this.ctext);
             } catch (IOException ex) {
                 throw new MojoExecutionException("Failed to prepare HITS prompts", ex);
             }
@@ -249,7 +251,8 @@ public class ClassTestMojo extends AbstractMojo {
                                              boolean onlyTargetLines,
                                              boolean fullFM,
                                              MavenProject project,
-                                             String selectClass) throws IOException {
+                                             String selectClass,
+                                             String constraintText) throws IOException {
         Path tmpDir = Files.createTempDirectory("chatunitest-prompts-");
         File dest = tmpDir.toFile();
 
@@ -279,6 +282,7 @@ public class ClassTestMojo extends AbstractMojo {
         // Always replace to avoid FreeMarker missing vars
         String codeLine = readLineOfClass(project, selectClass, lines);
         replaceMap.put("${lines_to_test}", codeLine);
+        replaceMap.put("${constraint_text}", constraintText == null ? "" : constraintText);
         replaceMap.put("${only_target_lines}", String.valueOf(onlyTargetLines));
         replaceMap.put("${full_fm}", String.valueOf(fullFM));
 
