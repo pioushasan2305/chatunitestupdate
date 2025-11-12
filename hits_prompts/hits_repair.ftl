@@ -38,7 +38,7 @@ ${lines_to_test}
 - You can use JUnit 4.
 - The language style should follow Java 8 conventions.
 - DO NOT generate line numbers.
-- Prioritize exercising the behavior tied to the exact line(s)-to-test shown above (do not broaden to unrelated parts of the method).
+- Focus strictly on the exact line(s)-to-test provided above; do not consider unrelated statements from the method.
 
 # Output Format
 To facilitate generating the desired unit test, follow these instructions:

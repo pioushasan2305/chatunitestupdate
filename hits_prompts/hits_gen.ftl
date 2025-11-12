@@ -46,7 +46,7 @@ Now please generate a whole unit test file that targets only the exact line(s)-t
 - Name the test class as ${class_name}_Test.
 - Ensure that the unit test methods do test the method under test:
 - Target the method under test as ${class_name}.${method_name}.
-- Focus strictly on the exact line(s)-to-test shown above; avoid exercising unrelated lines in the method.
+- Focus strictly on the exact line(s)-to-test provided above; do not consider unrelated statements from the method.
 - Utilize appropriate tools and adhere to the language style guidelines:
 - Utilize JUnit 5 for testing.
 - Adhere to Java 8 language style conventions.
