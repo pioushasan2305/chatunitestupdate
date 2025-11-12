@@ -18,9 +18,11 @@ ${lines_to_test}
 ```
 Data constraint:
 Data constraints in software are defined as rules or restrictions that specify permissible or required values for that data.
-The data constraint for the given line(s)-to-test:
+Operands:
+The data elements and the values in a constraint constitute the operands of the constraint.
+The operand for the given line(s)-to-test:
 ```
-${constraint_text}
+${operand}
 ```
 
 <#-- List of dependent classes and their brief information -->
