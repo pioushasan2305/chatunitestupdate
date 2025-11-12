@@ -12,6 +12,10 @@ The complete code provided here is for reference only and is not intended for ge
 ```java
 ${full_fm}
 ```
+The exact line(s)-to-test within ${class_name}.${method_name} are:
+```java
+${lines_to_test}
+```
 
 <#-- List of dependent classes and their brief information -->
 <#list c_deps as key, value>
@@ -30,7 +34,7 @@ ${full_fm}
 </#list>
 Based on the information provided above, generate unit tests for code ${step_code}. The description of this code is ${step_desp}
 
-Now please generate a whole unit test file for the method-to-test.
+Now please generate a whole unit test file that targets only the exact line(s)-to-test above within the method.
 
 #### Requirements and Attention for the Unit Test to Generate:
 
@@ -42,9 +46,11 @@ Now please generate a whole unit test file for the method-to-test.
 - Name the test class as ${class_name}_Test.
 - Ensure that the unit test methods do test the method under test:
 - Target the method under test as ${class_name}.${method_name}.
+- Focus strictly on the exact line(s)-to-test shown above; avoid exercising unrelated lines in the method.
 - Utilize appropriate tools and adhere to the language style guidelines:
 - Utilize JUnit 5 for testing.
 - Adhere to Java 8 language style conventions.
+
 
 
 ### Output Format:

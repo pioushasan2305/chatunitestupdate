@@ -8,6 +8,11 @@ ${method_sig} within the focal class ${class_name}
 <#-- This section will be replaced with the full source code of the class -->
 ${full_fm}
 
+The exact line(s)-to-test in ${class_name}.${method_name} are:
+```java
+${lines_to_test}
+```
+
 <#-- List of dependent classes and their brief information -->
 <#list c_deps as key, value>
     Brief information about the dependent class ${key} is as follows:
@@ -25,7 +30,7 @@ ${full_fm}
 </#list>
 
 <#-- Instructions for decomposing the method into slices -->
-### Instructions on Decomposing the Method under Test into Slices
+### Instructions on Decomposing ONLY the Exact Line(s)-to-Test into Slices
 
 1. Summarize the focal method.
 2. List the test environment settings required for running the focal method, including:
@@ -41,7 +46,7 @@ b. Replicate the corresponding original code statements.
 {slice A}.{slice B}: {description of the subtask to accomplish in the reformat} {corresponding original code statements}
 {slice A}.{slice C}: {description of the subtask to accomplish in the reformat} {corresponding original code statements}
 {slice D}: {description of the subtask to accomplish in the reformat} {corresponding original code statements}
-
+- Focus strictly on the exact line(s)-to-test provided above; do not include unrelated statements from the method.
 ### Format of the Output
 
 The output must strictly adhere to the following JSON format:
