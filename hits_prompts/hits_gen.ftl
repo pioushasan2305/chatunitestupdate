@@ -16,6 +16,12 @@ The exact line(s)-to-test within ${class_name}.${method_name} are:
 ```java
 ${lines_to_test}
 ```
+Data constraint:
+Data constraints in software are defined as rules or restrictions that specify permissible or required values for that data.
+The data constraint for the given line(s)-to-test:
+```
+${constraint_text}
+```
 
 <#-- List of dependent classes and their brief information -->
 <#list c_deps as key, value>

@@ -27,4 +27,3 @@ To help you correctly fix the unit test file, we provide the brief information a
 
 You have known enough for understanding and using the line(s)-to-test.
 Please follow the user's instructions and requirements to fix the unit test provided by the user.
-- Focus strictly on the exact line(s)-to-test provided above; do not consider unrelated statements from the method.
