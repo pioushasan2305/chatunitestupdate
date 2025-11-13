@@ -7,6 +7,16 @@ from typing import Dict, Optional
 LOC_METHOD_META = Path("/app/output/instr/loc-method.meta")
 TARGETS_CSV = Path("/app/input/common/targets.csv")
 
+# ============================================================
+# >>> ADDED: New configuration flags
+# ============================================================
+# If set to False, do NOT send -Dctext to CLI
+CTEXT_PUSH = True
+
+# Which column from targets.csv should supply the ctext parameter
+CTEXT_COLUMN = "constraint_text"
+# ============================================================
+
 
 def log(msg: str, global_log: Path):
     """Simplified log without timestamps or step headers."""
@@ -74,9 +84,18 @@ def build_module_to_methods(loc_meta: dict, targets_csv: Path, global_log: Path,
             file = row["file"].strip()
             line = row["line"].strip()
             module = row["module"].strip()
-            constraint_text = row.get("constraint_text", "").strip()
+
+            # ============================================================
+            # >>> CHANGED: Use configurable column name for ctext
+            # ============================================================
+            constraint_text = row.get(CTEXT_COLUMN, "").strip()
+
             mid = find_method_for_target(file, line, loc_meta)
-            debug_data.append({"module": module, "file": file, "line": line, "methodId": mid, "constraint_text": constraint_text})
+            debug_data.append({
+                "module": module, "file": file, "line": line,
+                "methodId": mid, "constraint_text": constraint_text
+            })
+
             if mid:
                 module_to_methods[module].append({
                     "methodId": mid,
@@ -175,6 +194,11 @@ def main():
             else:
                 cls, mname = mid, ""
 
+            # ============================================================
+            # >>> CHANGED: Make -Dctext optional
+            # ============================================================
+            ctext_arg = f" -Dctext='{ctext}'" if CTEXT_PUSH and ctext else ""
+
             cmd = (
                 f"source /app/init_env.sh && "
                 f"mvn -B io.github.zju-aces-ise:chatunitest-maven-plugin:2.1.1:method "
@@ -182,7 +206,7 @@ def main():
                 f"-Durl=https://api.openai.com/v1/chat/completions "
                 f"-DonlyTargetLines=true -DphaseType=HITS "
                 f"-DselectClass={cls} -DselectMethod={mname} "
-                f"-Dlines={line} -Dctext='{ctext}' -Dtemperature=0"
+                f"-Dlines={line}{ctext_arg} -Dtemperature=0"
             )
 
             module_dir = TOOL_DIR if module in ["", "."] else TOOL_DIR / module
