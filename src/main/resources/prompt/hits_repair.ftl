@@ -33,10 +33,6 @@ Let's proceed step by step:
 ```[java]
 ${lines_to_test}
 ```
-Constraint information for the given line:
-```java
-${constraint_text}
-```
 - Utilize correct tools and adhere to Java 8 language style:
 - You can use JUnit 4.
 - The language style should follow Java 8 conventions.

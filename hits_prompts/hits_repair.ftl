@@ -29,16 +29,10 @@ Let's proceed step by step:
 - Ensure correct testing of the method under test:
 - The method under test is defined in ${class_name}.
 - The method under test is ${class_name}.${method_name}.
-- The exact line(s)-to-test (code snippet) within that method are:
-```[java]
-${lines_to_test}
-```
-
 - Utilize correct tools and adhere to Java 8 language style:
-- You can use JUnit 4.
+- You can use JUnit 5.
 - The language style should follow Java 8 conventions.
 - DO NOT generate line numbers.
-- Focus strictly on the exact line(s)-to-test provided above; do not consider unrelated statements from the method.
 
 # Output Format
 To facilitate generating the desired unit test, follow these instructions:

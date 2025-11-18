@@ -5,10 +5,6 @@ The focal method is `${method_sig}` in the focal class `${class_name}`, and here
 ```[java]
 ${lines_to_test}
 ```
-Constraint information for the given line:
-```java
-${constraint_text}
-```
 under the method
 ```[java]
 ${full_fm}

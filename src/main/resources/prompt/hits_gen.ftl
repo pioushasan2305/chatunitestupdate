@@ -16,11 +16,6 @@ The exact line(s)-to-test within ${class_name}.${method_name} are:
 ```java
 ${lines_to_test}
 ```
-Constraint information for the given line:
-```java
-${constraint_text}
-```
-
 <#-- List of dependent classes and their brief information -->
 <#list c_deps as key, value>
     Brief information about the dependent class ${key} is as follows:
@@ -54,7 +49,6 @@ Now please generate a whole unit test file that targets only the exact line(s)-t
 - Utilize appropriate tools and adhere to the language style guidelines:
 - Utilize JUnit 4 for testing.
 - Adhere to Java 8 language style conventions.
-
 
 
 ### Output Format:

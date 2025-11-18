@@ -12,11 +12,6 @@ The exact line(s)-to-test in ${class_name}.${method_name} are:
 ```java
 ${lines_to_test}
 ```
-Constraint information for the given line:
-```java
-${constraint_text}
-```
-
 <#-- List of dependent classes and their brief information -->
 <#list c_deps as key, value>
     Brief information about the dependent class ${key} is as follows:
