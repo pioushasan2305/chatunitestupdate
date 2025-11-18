@@ -29,10 +29,10 @@ ${lines_to_test}
 </#list>
 
 <#-- Instructions for decomposing the method into slices -->
-### Instructions on Decomposing ONLY the Exact line(s)-to-test into Slices
+### Instructions on Decomposing the exact line(s)-to-test into Slices
 
 1. Summarize the line(s)-to-test.
-2. List the test environment settings required only for executing the target line(s)-to-test:
+2. List the test environment settings required for executing the line(s)-to-test:
 - Enumerate all input parameters and object/class fields invoked in the line(s)-to-test that need to be set or mocked.
 - Enumerate all object/class methods invoked in the line(s)-to-test that need to be set or mocked.
 3. Important Note! Please decompose the solution program into multiple problem-solving steps according to the semantics. Each step should represent a slice of the line(s)-to-test and accomplish a subtask.
