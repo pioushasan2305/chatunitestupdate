@@ -5,7 +5,7 @@ The focal method is `${method_sig}` in the focal class `${class_name}`, and here
 ```[java]
 ${lines_to_test}
 ```
-under the method
+And the focal method is
 ```[java]
 ${full_fm}
 ```
@@ -25,5 +25,4 @@ To help you correctly fix the unit test file, we provide the brief information a
     ```
 </#list>
 
-You have known enough for understanding and using the line(s)-to-test.
-Please follow the user's instructions and requirements to fix the unit test provided by the user.
+You have known enough for understanding and using the line(s)-to-test. Please follow the user's instructions and requirements to fix the unit test provided by the user.

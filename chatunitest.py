@@ -137,7 +137,7 @@ def main():
     TOOL_DIR = Path(f"/app/{TOOL_FULL}")
 
     # === API and Model vars ===
-    DAPI_KEYS = f"-DapiKeys='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'"
+    DAPI_KEYS = f"-DapiKeys='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'"
     DMODEL = "-Dmodel=gpt-4o"
 
     start_total = time.time()
