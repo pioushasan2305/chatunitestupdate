@@ -29,13 +29,13 @@ ${lines_to_test}
 </#list>
 
 <#-- Instructions for decomposing the method into slices -->
-### Instructions on Decomposing the exact line(s)-to-test into Slices
+### Instructions on Decomposing the Method under Test into Slices
 
-1. Summarize the line(s)-to-test.
-2. List the test environment settings required for executing the line(s)-to-test:
-- Enumerate all input parameters and object/class fields invoked in the line(s)-to-test that need to be set or mocked.
-- Enumerate all object/class methods invoked in the line(s)-to-test that need to be set or mocked.
-3. Important Note! Please decompose the solution program into multiple problem-solving steps according to the semantics. Each step should represent a slice of the line(s)-to-test and accomplish a subtask.
+1. Summarize the focal method.
+2. List the test environment settings required for running the focal method, including:
+- Enumerate all input parameters and object/class fields invoked in the focal method that need to be set or mocked.
+- Enumerate all object/class methods invoked in the focal method that need to be set or mocked.
+3. Important Note! Please decompose the solution program into multiple problem-solving steps according to the semantics. Each step should represent a slice of the method under test and accomplish a subtask.
 - Slices can be hierarchical.
 - Your analysis has two parts:
 a. Describe the subtask of the slice.
@@ -53,7 +53,7 @@ The output must strictly adhere to the following JSON format:
 ```json
 {
 "summarization": "...",
-"//": "Local variables defined in the line(s)-to-test should not be reported.",
+"//": "Local variables defined in the focal method should not be reported.",
 "invoked_outside_vars": [
 "input_str: string, input parameter, the input string to handle",
 "code.format: public string, public class field of object 'code' of class Encoding, representing the format to encode the input string",

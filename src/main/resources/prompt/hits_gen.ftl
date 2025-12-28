@@ -46,7 +46,7 @@ Now please generate a whole unit test file for the line(s)-to-test.
 - Ensure that the unit test methods do execute the line(s) under test.
 - Target exact line(s)-to-test provided above.
 - Utilize appropriate tools and adhere to the language style guidelines:
-- Utilize JUnit 4 for testing.
+- Utilize JUnit 5 for testing.
 - Adhere to Java 8 language style conventions.
 
 

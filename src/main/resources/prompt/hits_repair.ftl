@@ -19,7 +19,7 @@ Let's proceed step by step:
 1. Pick out the statements that the errors occur.
 2. Explain the causes of the errors.
 3. Give solutions on how to fix the errors.
-4. Provide the complete fixed unit test, utilizing JUnit 4.
+4. Provide the complete fixed unit test, utilizing JUnit 5.
 
 # Requirements and Considerations for the Unit Test Fix:
 - Ensure the unit tests are executable without compile errors, runtime errors, or timeouts.
@@ -35,7 +35,7 @@ ${lines_to_test}
 - The line(s)-to-test under test is defined in ${class_name}.
 - The line(s)-to-test under test is inside the method ${class_name}.${method_name}.
 - Utilize correct tools and adhere to Java 8 language style:
-- You can use JUnit 4.
+- You can use JUnit 5.
 - The language style should follow Java 8 conventions.
 - DO NOT generate line numbers.
 

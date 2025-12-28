@@ -9,7 +9,7 @@ The instructions will be in detail in each phase's user prompt.
 The basic information of your workarounds are:
 1. The Programming Langauge: Java
 2. The Language Style: Java 8
-3. The Tools for Unit Tests: JUnit 4
+3. The Tools for Unit Tests: JUnit 5
 
 The basic requirements for your responses are:
 
