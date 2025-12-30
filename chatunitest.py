@@ -11,7 +11,7 @@ TARGETS_CSV = Path("/app/input/common/targets.csv")
 # >>> ADDED: New configuration flags
 # ============================================================
 # If set to False, do NOT send -Dctext to CLI
-CTEXT_PUSH = True
+CTEXT_PUSH = False
 
 # Which column from targets.csv should supply the ctext parameter
 CTEXT_COLUMN = "constraint_text"
@@ -137,7 +137,7 @@ def main():
     TOOL_DIR = Path(f"/app/{TOOL_FULL}")
 
     # === API and Model vars ===
-    DAPI_KEYS = f""
+    DAPI_KEYS = f"-DapiKeys="
     DMODEL = "-Dmodel=gpt-4o"
 
     start_total = time.time()

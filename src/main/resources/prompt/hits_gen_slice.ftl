@@ -8,10 +8,6 @@ ${method_sig} within the focal class ${class_name}
 <#-- This section will be replaced with the full source code of the class -->
 ${full_fm}
 
-The exact line(s)-to-test in ${class_name}.${method_name} are:
-```java
-${lines_to_test}
-```
 <#-- List of dependent classes and their brief information -->
 <#list c_deps as key, value>
     Brief information about the dependent class ${key} is as follows:
@@ -85,4 +81,4 @@ The output must strictly adhere to the following JSON format:
 2. **Strict JSON Adherence**: Emphasized that the output must strictly follow the JSON format, aligning with the provided sample.
 3. **Comments for Understanding**: Added comments to guide the LLM on how to fill in the template appropriately.
 
-This should help in generating the structured output you need for unit testing your line(s)-to-test effectively.
+This should help in generating the structured output you need for unit testing your method effectively.
