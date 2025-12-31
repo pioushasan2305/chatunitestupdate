@@ -8,6 +8,10 @@ ${method_sig} within the focal class ${class_name}
 <#-- This section will be replaced with the full source code of the class -->
 ${full_fm}
 
+The exact line(s)-to-test in ${class_name}.${method_name} are:
+```java
+${lines_to_test}
+```
 <#-- List of dependent classes and their brief information -->
 <#list c_deps as key, value>
     Brief information about the dependent class ${key} is as follows:
@@ -25,13 +29,13 @@ ${full_fm}
 </#list>
 
 <#-- Instructions for decomposing the method into slices -->
-### Instructions on Decomposing the Method under Test into Slices
+### Instructions on Decomposing the exact line(s)-to-test into Slices
 
-1. Summarize the focal method.
-2. List the test environment settings required for running the focal method, including:
-- Enumerate all input parameters and object/class fields invoked in the focal method that need to be set or mocked.
-- Enumerate all object/class methods invoked in the focal method that need to be set or mocked.
-3. Important Note! Please decompose the solution program into multiple problem-solving steps according to the semantics. Each step should represent a slice of the method under test and accomplish a subtask.
+1. Summarize the line(s)-to-test.
+2. List the test environment settings required for executing the line(s)-to-test:
+- Enumerate all input parameters and object/class fields invoked in the line(s)-to-test that need to be set or mocked.
+- Enumerate all object/class methods invoked in the line(s)-to-test that need to be set or mocked.
+3. Important Note! Please decompose the solution program into multiple problem-solving steps according to the semantics. Each step should represent a slice of the line(s)-to-test and accomplish a subtask.
 - Slices can be hierarchical.
 - Your analysis has two parts:
 a. Describe the subtask of the slice.
@@ -49,7 +53,7 @@ The output must strictly adhere to the following JSON format:
 ```json
 {
 "summarization": "...",
-"//": "Local variables defined in the focal method should not be reported.",
+"//": "Local variables defined in the line(s)-to-test should not be reported.",
 "invoked_outside_vars": [
 "input_str: string, input parameter, the input string to handle",
 "code.format: public string, public class field of object 'code' of class Encoding, representing the format to encode the input string",
@@ -81,4 +85,4 @@ The output must strictly adhere to the following JSON format:
 2. **Strict JSON Adherence**: Emphasized that the output must strictly follow the JSON format, aligning with the provided sample.
 3. **Comments for Understanding**: Added comments to guide the LLM on how to fill in the template appropriately.
 
-This should help in generating the structured output you need for unit testing your method effectively.
+This should help in generating the structured output you need for unit testing your line(s)-to-test effectively.
