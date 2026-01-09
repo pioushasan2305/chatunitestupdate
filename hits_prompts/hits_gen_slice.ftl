@@ -81,4 +81,4 @@ The output must strictly adhere to the following JSON format:
 2. **Strict JSON Adherence**: Emphasized that the output must strictly follow the JSON format, aligning with the provided sample.
 3. **Comments for Understanding**: Added comments to guide the LLM on how to fill in the template appropriately.
 
-This should help in generating the structured output you need for unit testing your method effectively.
+This should help in generating the structured output you need for unit testing your line(s)-to-test effectively.

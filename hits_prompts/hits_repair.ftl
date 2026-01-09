@@ -23,12 +23,16 @@ Let's proceed step by step:
 
 # Requirements and Considerations for the Unit Test Fix:
 - Ensure the unit tests are executable without compile errors, runtime errors, or timeouts.
-- Aim for high coverage scores, covering as many instructions and branches of the method under test as possible.
-- Avoid modifying the method under test.
+- Aim for high coverage scores, covering as many instructions and branches of the line(s)-to-test as possible.
+- Avoid modifying the method under test and the line(s)-to-test.
 - Generate the entire unit test file, including package declaration and imports.
-- Ensure correct testing of the method under test:
-- The method under test is defined in ${class_name}.
-- The method under test is ${class_name}.${method_name}.
+- Ensure correct testing of the line(s)-to-test:
+- The exact line(s)-to-test (code snippet) within that method are:
+```[java]
+${lines_to_test}
+```
+- The line(s)-to-test under test is defined in ${class_name}.
+- The line(s)-to-test under test is within the method ${class_name}.${method_name}.
 - Utilize correct tools and adhere to Java 8 language style:
 - You can use JUnit 5.
 - The language style should follow Java 8 conventions.
