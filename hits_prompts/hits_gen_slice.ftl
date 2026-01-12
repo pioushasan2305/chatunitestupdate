@@ -28,7 +28,7 @@ ${lines_to_test}
     ```
 </#list>
 
-<#-- Instructions for decomposing the method into slices -->
+<#-- Instructions for decomposing the line(s)-to-test into slices -->
 ### Instructions on Decomposing the exact line(s)-to-test into Slices
 
 1. Summarize the line(s)-to-test.
