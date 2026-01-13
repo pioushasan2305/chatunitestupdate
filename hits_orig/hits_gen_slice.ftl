@@ -3,7 +3,7 @@ Here's an optimized version of your FTL template, designed to ensure that the ou
 ```ftl
 <#-- Begin by defining the method and class information -->
 <#-- This section will be replaced with the provided method signature and class name -->
-${method_sig} within the focal class ${class_name}
+The exact line-to-test is line number ${target_line_number} in ${method_sig} within the focal class ${class_name}
 
 <#-- This section will be replaced with the full source code of the class -->
 ${full_fm}
@@ -26,6 +26,8 @@ ${full_fm}
 
 <#-- Instructions for decomposing the method into slices -->
 ### Instructions on Decomposing the Method under Test into Slices
+
+The slicing objective is to identify all statements in the focal class given before that the stated line-to-test depends on.
 
 1. Summarize the focal method.
 2. List the test environment settings required for running the focal method, including:
