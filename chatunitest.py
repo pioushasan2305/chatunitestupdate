@@ -11,7 +11,7 @@ TARGETS_CSV = Path("/app/input/common/targets.csv")
 # >>> ADDED: New configuration flags
 # ============================================================
 # If set to False, do NOT send -Dctext to CLI
-CTEXT_PUSH = False
+CTEXT_PUSH = True
 
 # Which column from targets.csv should supply the ctext parameter
 CTEXT_COLUMN = "constraint_text"
