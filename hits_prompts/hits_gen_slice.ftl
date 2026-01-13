@@ -3,15 +3,11 @@ Here's an optimized version of your FTL template, designed to ensure that the ou
 ```ftl
 <#-- Begin by defining the method and class information -->
 <#-- This section will be replaced with the provided method signature and class name -->
-${method_sig} within the focal class ${class_name}
+The exact line-to-test is line number ${target_line_number} in ${method_sig} within the focal class ${class_name}
 
 <#-- This section will be replaced with the full source code of the class -->
 ${full_fm}
 
-The exact line(s)-to-test in ${class_name}.${method_name} are:
-```java
-${lines_to_test}
-```
 <#-- List of dependent classes and their brief information -->
 <#list c_deps as key, value>
     Brief information about the dependent class ${key} is as follows:
@@ -28,29 +24,25 @@ ${lines_to_test}
     ```
 </#list>
 
-<#-- Instructions for decomposing the line(s)-to-test into slices -->
-### Instructions on Decomposing the exact line(s)-to-test into Slices
+<#-- Instructions for decomposing the method into slices -->
+### Instructions on Decomposing the Method under Test into Slices
 
-1. Summarize the line(s)-to-test.
-2. List the test environment settings required for executing the line(s)-to-test:
-- Enumerate all input parameters and object/class fields invoked in the line(s)-to-test that need to be set or mocked.
-- Enumerate all object/class methods invoked in the line(s)-to-test that need to be set or mocked.
-3. Important Note! Please decompose the solution program into a slice according to a backward slicing strategy.
-The slicing objective is to identify, in a backward manner, all original program statements that the given line(s)-to-test depend on.
-To construct the slice:
-- Start from the line(s)-to-test.
-- Identify all variables, fields, or method return values used in that line.
-- Trace backward to the statements where these values are defined or modified.
-- Recursively repeat this process until reaching input parameters, constants, or external method calls.
-- The slice is computed by following data and control dependencies of the line(s)-to-test backward through the program.
-- Since a single line(s)-to-test is given, the result should be a single slice.
+The slicing objective is to identify all statements in the focal class given before that the stated line-to-test depends on.
+
+1. Summarize the focal method.
+2. List the test environment settings required for running the focal method, including:
+- Enumerate all input parameters and object/class fields invoked in the focal method that need to be set or mocked.
+- Enumerate all object/class methods invoked in the focal method that need to be set or mocked.
+3. Important Note! Please decompose the solution program into multiple problem-solving steps according to the semantics. Each step should represent a slice of the method under test and accomplish a subtask.
+- Slices can be hierarchical.
 - Your analysis has two parts:
 a. Describe the subtask of the slice.
-b. Replicate the corresponding original code statements that the line(s)-to-test depend on.
-
-4. Organize the slice into a reformatted structure.
-- Use the following format:
-{slice}: {description of the subtask to accomplish in the reformat} {corresponding original code statements}
+b. Replicate the corresponding original code statements.
+4. Organize the hierarchical slices into a reformatted structure.
+- For example, if we have 4 slices A, B, C, and D. Slice A contains slice B and slice C, and slice D are siblings of slice A. Reformat them as follows:
+{slice A}.{slice B}: {description of the subtask to accomplish in the reformat} {corresponding original code statements}
+{slice A}.{slice C}: {description of the subtask to accomplish in the reformat} {corresponding original code statements}
+{slice D}: {description of the subtask to accomplish in the reformat} {corresponding original code statements}
 
 ### Format of the Output
 
@@ -59,7 +51,7 @@ The output must strictly adhere to the following JSON format:
 ```json
 {
 "summarization": "...",
-"//": "Local variables defined in the line(s)-to-test should not be reported.",
+"//": "Local variables defined in the focal method should not be reported.",
 "invoked_outside_vars": [
 "input_str: string, input parameter, the input string to handle",
 "code.format: public string, public class field of object 'code' of class Encoding, representing the format to encode the input string",
@@ -91,4 +83,4 @@ The output must strictly adhere to the following JSON format:
 2. **Strict JSON Adherence**: Emphasized that the output must strictly follow the JSON format, aligning with the provided sample.
 3. **Comments for Understanding**: Added comments to guide the LLM on how to fill in the template appropriately.
 
-This should help in generating the structured output you need for unit testing your line(s)-to-test effectively.
+This should help in generating the structured output you need for unit testing your method effectively.
