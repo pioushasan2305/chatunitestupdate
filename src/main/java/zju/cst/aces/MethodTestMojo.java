@@ -139,8 +139,16 @@ public class MethodTestMojo extends AbstractMojo {
 
     @Parameter(property = "fullFM", defaultValue = "false")
     public boolean fullFM;
+
     @Parameter(property = "ctext")
     private String ctext;
+
+    @Parameter(property = "offset")
+    private Integer offset;
+
+    @Parameter(property = "methodsig")
+    private String methodsig;
+
     // ------------------------------------------
 
     @Component(hint = "default")
@@ -173,7 +181,7 @@ public class MethodTestMojo extends AbstractMojo {
         File effectivePromptDir = promptPath;
         if ("HITS".equalsIgnoreCase(phaseType)) {
             try {
-                effectivePromptDir = prepareHitsPromptDir(promptPath, log, lines, onlyTargetLines, fullFM, this.project, this.selectClass, this.ctext);
+                effectivePromptDir = prepareHitsPromptDir(promptPath, log, lines, onlyTargetLines, fullFM, this.project, this.selectClass, this.ctext, this.offset,this.methodsig);
             } catch (IOException ex) {
                 throw new MojoExecutionException("Failed to prepare HITS prompts", ex);
             }
@@ -255,7 +263,9 @@ public class MethodTestMojo extends AbstractMojo {
                                              boolean fullFM,
                                              MavenProject project,
                                              String selectClass,
-                                             String constraintText) throws IOException {
+                                             String constraintText,
+                                             Integer offset,
+                                             String methodSig) throws IOException {
         Path tmpDir = Files.createTempDirectory("chatunitest-prompts-");
         File dest = tmpDir.toFile();
 
@@ -284,9 +294,29 @@ public class MethodTestMojo extends AbstractMojo {
         Map<String, String> replaceMap = new HashMap<>();
         String codeLine = readLineOfClass(project, selectClass, lines);
         replaceMap.put("${lines_to_test}", codeLine);
-        replaceMap.put("${constraint_text}", constraintText == null ? "" : constraintText);
+        //replaceMap.put("${constraint_text}", constraintText == null ? "" : constraintText);
         replaceMap.put("${only_target_lines}", String.valueOf(onlyTargetLines));
-        replaceMap.put("${full_fm}", String.valueOf(fullFM));
+        String fullCode = readWholeClass(project, selectClass);   // new helper (below)
+        String annotated = fullCode;
+
+        if (fullCode != null && !fullCode.isEmpty() && methodSig != null && offset != null) {
+            annotated = annotateMethodAtOffset(fullCode, methodSig, offset); // your helper
+        }
+
+        replaceMap.put("${full_fm}", annotated == null ? "" : annotated);
+
+        if (constraintText != null) {
+            replaceMap.put("${constraint_text}", constraintText);
+        }
+
+        if (offset != null) {
+            replaceMap.put("${offset}", offset.toString());
+        }
+
+        if (methodSig != null) {
+            replaceMap.put("${methodsig}", methodSig);
+        }
+
 
         inject(dest.toPath().resolve("hits_gen.ftl"), replaceMap);
         inject(dest.toPath().resolve("hits_gen_slice.ftl"), replaceMap);
@@ -342,4 +372,175 @@ public class MethodTestMojo extends AbstractMojo {
             return "";
         }
     }
+    private static class ParsedSig {
+        final String name;
+        final java.util.List<String> paramTypes; // normalized simple names
+        ParsedSig(String name, java.util.List<String> paramTypes) {
+            this.name = name;
+            this.paramTypes = paramTypes;
+        }
+    }
+
+    private static ParsedSig parseMethodSig(String methodsig) {
+        // methodsig: query(MappedStatement,Object,RowBounds,...)
+        int lp = methodsig.indexOf('(');
+        int rp = methodsig.lastIndexOf(')');
+        if (lp < 0 || rp < lp) throw new IllegalArgumentException("Bad methodsig: " + methodsig);
+
+        String name = methodsig.substring(0, lp).trim();
+        String inside = methodsig.substring(lp + 1, rp).trim();
+
+        java.util.List<String> types = new java.util.ArrayList<>();
+        if (!inside.isEmpty()) {
+            for (String t : inside.split(",")) {
+                types.add(normalizeType(t));
+            }
+        }
+        return new ParsedSig(name, types);
+    }
+
+    private static String normalizeType(String t) {
+        // normalize things like "java.lang.String", "List<String>", "@Ann final Foo...", "Foo..." varargs
+        t = t.trim();
+        t = t.replace("...", "[]"); // treat varargs as array
+        // remove annotations and modifiers words often seen in params
+        t = t.replaceAll("@\\w+(\\([^)]*\\))?\\s*", "");
+        t = t.replaceAll("\\bfinal\\b\\s*", "");
+        // strip generics
+        t = t.replaceAll("<[^>]*>", "");
+        t = t.trim();
+        // take simple name
+        int lastDot = t.lastIndexOf('.');
+        if (lastDot >= 0) t = t.substring(lastDot + 1);
+        return t.trim();
+    }
+    private static String annotateMethodAtOffset(String fullCode, String methodsig, Integer offset) {
+        if (fullCode == null || methodsig == null || offset == null) return fullCode;
+        if (offset <= 0) return fullCode;
+
+        ParsedSig sig = parseMethodSig(methodsig);
+
+        // Find candidate method declarations with same name.
+        // This is intentionally permissive; we’ll verify params afterwards.
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile(
+                "(?s)(?:public|protected|private|static|final|synchronized|native|abstract|\\s)+" +
+                        ".*?\\b" + java.util.regex.Pattern.quote(sig.name) + "\\s*\\(([^)]*)\\)\\s*(?:throws\\s+[^\\{]+)?\\{"
+        );
+        java.util.regex.Matcher m = p.matcher(fullCode);
+
+        while (m.find()) {
+            int headerStart = m.start();
+            int braceOpen = fullCode.indexOf('{', m.end() - 1);
+            if (braceOpen < 0) continue;
+
+            String paramList = m.group(1);
+            java.util.List<String> declTypes = extractParamTypesFromDeclaration(paramList);
+
+            if (!sameTypes(sig.paramTypes, declTypes)) continue;
+
+            // Extract full method text using brace matching
+            int methodEnd = findMatchingBrace(fullCode, braceOpen);
+            if (methodEnd < 0) continue;
+
+            String methodText = fullCode.substring(headerStart, methodEnd + 1);
+            String annotated = insertCommentInsideMethod(methodText, offset);
+
+            // Replace in fullCode (first matching exact method)
+            return fullCode.substring(0, headerStart) + annotated + fullCode.substring(methodEnd + 1);
+        }
+
+        // If not found, return unchanged
+        return fullCode;
+    }
+
+    private static java.util.List<String> extractParamTypesFromDeclaration(String paramList) {
+        java.util.List<String> types = new java.util.ArrayList<>();
+        String trimmed = paramList.trim();
+        if (trimmed.isEmpty()) return types;
+
+        // Split by commas (good enough for typical Java params; generics already stripped later)
+        String[] parts = trimmed.split(",");
+        for (String part : parts) {
+            String s = part.trim();
+            if (s.isEmpty()) continue;
+
+            // Remove generics to avoid commas inside <...> causing issues in rare cases
+            s = s.replaceAll("<[^>]*>", "");
+
+            // Parameter tokens: [annotations/modifiers] Type Name
+            // We take everything except the last token as "type"
+            String[] toks = s.trim().split("\\s+");
+            if (toks.length == 1) {
+                // Strange, but treat it as type-only
+                types.add(normalizeType(toks[0]));
+            } else {
+                StringBuilder type = new StringBuilder();
+                for (int i = 0; i < toks.length - 1; i++) {
+                    type.append(toks[i]).append(" ");
+                }
+                types.add(normalizeType(type.toString()));
+            }
+        }
+        return types;
+    }
+
+    private static boolean sameTypes(java.util.List<String> a, java.util.List<String> b) {
+        if (a.size() != b.size()) return false;
+        for (int i = 0; i < a.size(); i++) {
+            if (!a.get(i).equals(b.get(i))) return false;
+        }
+        return true;
+    }
+
+    private static int findMatchingBrace(String s, int openBraceIdx) {
+        int depth = 0;
+        for (int i = openBraceIdx; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '{') depth++;
+            else if (c == '}') {
+                depth--;
+                if (depth == 0) return i;
+            }
+        }
+        return -1;
+    }
+    private static String insertCommentInsideMethod(String methodText, int offset) {
+        int braceOpen = methodText.indexOf('{');
+        if (braceOpen < 0) return methodText;
+
+        int bodyStart = braceOpen + 1; // right after '{'
+        String header = methodText.substring(0, bodyStart);
+        String bodyAndClose = methodText.substring(bodyStart);
+
+        // Split body into lines
+        String[] lines = bodyAndClose.split("\n", -1);
+
+        // Count lines “inside the method” starting from first line after '{'
+        // We’ll annotate the line at index (offset-1) if it exists and is not just the closing brace region.
+        int targetIdx = offset - 1;
+        if (targetIdx < 0 || targetIdx >= lines.length) return methodText;
+
+        lines[targetIdx] = "//This is line " + offset + "\n" + lines[targetIdx];
+
+        String newBody = String.join("\n", lines);
+        return header + newBody;
+    }
+    static String readWholeClass(MavenProject project, String fqcn) {
+        try {
+            if (fqcn == null) return "";
+            String rel = fqcn.replace('.', '/') + ".java";
+            Path src = project.getBasedir().toPath().resolve("src/main/java").resolve(rel);
+            if (!Files.exists(src)) {
+                src = project.getBasedir().toPath().resolve("src/test/java").resolve(rel);
+            }
+            if (!Files.exists(src)) return "";
+            return Files.readString(src, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+
+
+
 }

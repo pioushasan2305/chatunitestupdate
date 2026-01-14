@@ -215,9 +215,10 @@ If you have any questions or want to learn about our experimental results, pleas
 
 2. **Configure Dev Container**
    Go to the existing dev container and replace `chatunitest.py` with the one provided in this repository.
-   * Set `CTEXT_PUSH=True` if additional text/information needs to be sent along with current prompts.
    * Set `CTEXT_COLUMN=<column_name>` using a column name from `targets.csv` inside the dev container (e.g., `CTEXT_COLUMN="constraint_text"`).
-   * *Note: Currently, only a single additional column's data can be sent to be added to the prompt.*
+   * Set `OFFSET_COLUMN=<column_name>` using a column name from `targets.csv` inside the dev container (e.g., `OFFSET_COLUMN="offset_in_method"`).
+   * Set `METHODSIG_COLUMN=<column_name>` using a column name from `targets.csv` inside the dev container (e.g., `METHODSIG_COLUMN="method_signature"`).
+    * Set `METHOD_COLUMN=<column_name>` using a column name from `targets.csv` inside the dev container (e.g., `METHOD_COLUMN="method"`).
 
 3. **Update POM Configuration**
    Change the project's `pom.xml` to be exactly as `hits-4o`.

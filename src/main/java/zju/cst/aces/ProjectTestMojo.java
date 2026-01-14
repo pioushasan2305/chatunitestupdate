@@ -132,6 +132,15 @@ public class ProjectTestMojo
     public String mavenHome;
     @Parameter(property = "sampleSize", defaultValue = "10")
     public int sampleSize;
+    @Parameter(property = "ctext")
+    public String ctext;
+
+    @Parameter(property = "offset")
+    public Integer offset;
+
+    @Parameter(property = "methodsig")
+    public String methodsig;
+
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     @Component(hint = "default")
     public DependencyGraphBuilder dependencyGraphBuilder;

@@ -10,11 +10,17 @@ TARGETS_CSV = Path("/app/input/common/targets.csv")
 # ============================================================
 # >>> ADDED: New configuration flags
 # ============================================================
-# If set to False, do NOT send -Dctext to CLI
-CTEXT_PUSH = True
-
-# Which column from targets.csv should supply the ctext parameter
+# Which column from targets.csv should supply the ctext parameter (optional)
 CTEXT_COLUMN = "constraint_text"
+
+# NEW: Which column from targets.csv supplies offset (optional)
+OFFSET_COLUMN = "offset_in_method"
+
+# NEW: Which column from targets.csv supplies methodsig (optional)
+METHODSIG_COLUMN = "method_signature"
+# Example: org.apache.ibatis.executor.BaseExecutor#query
+METHOD_COLUMN = "method"
+
 # ============================================================
 
 
@@ -41,38 +47,63 @@ def run_silent(cmd: str, logfile: Path, cwd: Optional[Path] = None) -> int:
             text=True,
             executable="/bin/bash"
         )
-        # Stream output live and write to log file
         for line in proc.stdout:
-            print(line, end="")  # live output to terminal
+            print(line, end="")
             f.write(line)
         proc.wait()
         return proc.returncode
 
 
-def sha1_key(s: str) -> str:
-    return hashlib.sha1(s.encode("utf-8")).hexdigest()
+def sha1(s: str) -> str:
+    return hashlib.sha1(s.encode("utf-8")).hexdigest()[:10]
 
 
-def zip_and_move(src_dir: Path, dest_zip: Path, global_log: Path):
-    if not src_dir.exists():
-        log(f"Skip zipping {src_dir} (not found)", global_log)
-        return
-    log(f"Zipping {src_dir} → {dest_zip}", global_log)
-    tmp_zip = dest_zip.with_suffix("")
-    shutil.make_archive(str(tmp_zip), "zip", str(src_dir))
-    dest_zip.parent.mkdir(parents=True, exist_ok=True)
-    shutil.move(str(tmp_zip) + ".zip", dest_zip)
-    log(f"Created {dest_zip.name}", global_log)
+def read_loc_method_meta(loc_method_meta: Path, global_log: Path) -> dict:
+    """
+    Read /app/output/instr/loc-method.meta into a dict:
+    {
+      "<srcpath>:<line>": "full.class.Name#methodName"
+    }
+    """
+    loc_meta = {}
+    if not loc_method_meta.exists():
+        log(f"[WARN] loc-method.meta not found: {loc_method_meta}", global_log)
+        return loc_meta
+
+    for ln in loc_method_meta.read_text(encoding="utf-8", errors="ignore").splitlines():
+        ln = ln.strip()
+        if not ln or ln.startswith("#"):
+            continue
+        # expected format: <file>:<line>,<methodId>
+        if "," not in ln:
+            continue
+        left, mid = ln.split(",", 1)
+        left = left.strip()
+        mid = mid.strip()
+        if left and mid:
+            loc_meta[left] = mid
+    log(f"Loaded {len(loc_meta)} mappings from {loc_method_meta}", global_log)
+    return loc_meta
 
 
-def find_method_for_target(file: str, line: str, loc_meta: dict) -> Optional[str]:
-    target_key = f"{file}#{line}"
-    best_match, best_len = None, 0
-    for loc, meta in loc_meta.items():
-        if target_key.endswith(loc) and len(loc) > best_len:
-            best_match = meta.get("methodId")
-            best_len = len(loc)
-    return best_match
+def normalize_target_file(path_str: str) -> str:
+    """
+    Normalize target file path format to match loc-method.meta keys.
+    loc-method.meta usually uses paths like:
+      src/main/java/org/foo/Bar.java:123
+    """
+    path_str = path_str.strip().lstrip("./")
+    return path_str
+
+
+def find_method_for_target(file: str, line: str, loc_meta: dict) -> str:
+    """
+    Find methodId for file+line from loc_meta.
+    Keys in loc_meta are like: src/main/java/.../X.java:123
+    """
+    file_n = normalize_target_file(file)
+    key = f"{file_n}:{line}"
+    return loc_meta.get(key, "")
 
 
 def build_module_to_methods(loc_meta: dict, targets_csv: Path, global_log: Path, out_json: Path) -> Dict[str, list]:
@@ -86,21 +117,39 @@ def build_module_to_methods(loc_meta: dict, targets_csv: Path, global_log: Path,
             module = row["module"].strip()
 
             # ============================================================
-            # >>> CHANGED: Use configurable column name for ctext
+            # >>> CHANGED: Use configurable column name for ctext/offset/methodsig/method
             # ============================================================
             constraint_text = row.get(CTEXT_COLUMN, "").strip()
+            offset_raw = row.get(OFFSET_COLUMN, "").strip()
+            methodsig = row.get(METHODSIG_COLUMN, "").strip()
+            method_full = row.get(METHOD_COLUMN, "").strip()
 
-            mid = find_method_for_target(file, line, loc_meta)
+            offset = None
+            if offset_raw:
+                try:
+                    # requirement: whatever offset value we get from targets.csv, add 1
+                    offset = int(offset_raw) + 1
+                except ValueError:
+                    log(f"[WARN] Bad offset value '{offset_raw}' for {file}:{line} (expected int). Ignoring.", global_log)
+                    offset = None
+
+            # Prefer method column if present; otherwise map via loc-method.meta
+            mid = method_full if method_full else find_method_for_target(file, line, loc_meta)
+
             debug_data.append({
                 "module": module, "file": file, "line": line,
-                "methodId": mid, "constraint_text": constraint_text
+                "methodId": mid, "constraint_text": constraint_text,
+                "offset": offset, "methodsig": methodsig, "method": method_full
             })
 
             if mid:
                 module_to_methods[module].append({
                     "methodId": mid,
                     "line": line,
-                    "constraint_text": constraint_text
+                    "constraint_text": constraint_text,
+                    "offset": offset,
+                    "methodsig": methodsig,
+                    "method": method_full
                 })
             else:
                 log(f"[WARN] No method found for {file}:{line}", global_log)
@@ -110,80 +159,54 @@ def build_module_to_methods(loc_meta: dict, targets_csv: Path, global_log: Path,
 
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(debug_data, indent=2), encoding="utf-8")
-    log(f"Wrote mapping JSON to {out_json}", global_log)
+    log(f"Wrote mapping debug JSON to: {out_json}", global_log)
+
     return module_to_methods
 
 
-def get_project_name() -> str:
-    with open("/app/.project.meta", encoding="utf-8") as f:
-        for line in f:
-            if line.startswith("project_name="):
-                project_full = line.strip().split("=", 1)[1]
-                break
-        return re.sub(r"-\d+(\.\d+)*([-a-zA-Z0-9]*)?$", "", project_full)
-
-
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python3 run_tool.py <tool_name_with_version>")
-        sys.exit(1)
+    TOOL_DIR = Path("/app/input/tool").resolve()
+    OUTPUT_DIR = Path("/app/output").resolve()
+    GLOBAL_LOG = OUTPUT_DIR / "run_chatunitest.log"
+    OUT_JSON = OUTPUT_DIR / "targets_method_map.json"
 
-    TOOL_FULL = sys.argv[1]
-    TOOL_BASE = TOOL_FULL.split("-")[0]
+    # read env from prior steps
+    api_keys = os.environ.get("API_KEYS", "")
+    model = os.environ.get("MODEL", "")
+    if not api_keys:
+        # fallback: script caller can set via env or leave empty (mvn may still run if plugin config has keys)
+        api_keys = ""
+    if not model:
+        model = "gpt-4o-mini"
 
-    OUTPUT_DIR = Path(f"/app/output/gentest/{TOOL_FULL}")
-    GLOBAL_LOG = Path(f"/app/output/gentest/{TOOL_FULL}.log")
-    LOG_ROOT = Path(f"/app/log/gentest/{TOOL_FULL}")
-    TOOL_DIR = Path(f"/app/{TOOL_FULL}")
+    # Maven args
+    DAPI_KEYS = f"-DapiKeys={api_keys}" if api_keys else ""
+    DMODEL = f"-Dmodel={model}" if model else ""
 
-    # === API and Model vars ===
-    DAPI_KEYS = f"-DapiKeys="
-    DMODEL = "-Dmodel=gpt-4o"
+    log("[INFO] Starting chatunitest.py", GLOBAL_LOG)
+    log(f"[INFO] TOOL_DIR={TOOL_DIR}", GLOBAL_LOG)
+    log(f"[INFO] TARGETS_CSV={TARGETS_CSV}", GLOBAL_LOG)
+    log(f"[INFO] LOC_METHOD_META={LOC_METHOD_META}", GLOBAL_LOG)
 
-    start_total = time.time()
-    log(f"{TOOL_FULL.upper()} pipeline started", GLOBAL_LOG)
+    loc_meta = read_loc_method_meta(LOC_METHOD_META, GLOBAL_LOG)
+    if not TARGETS_CSV.exists():
+        log(f"[ERROR] targets.csv not found: {TARGETS_CSV}", GLOBAL_LOG)
+        sys.exit(2)
 
-    # --- CLEAN ---
-    subprocess.call(["bash", "/app/input/common/clean.sh", "gentest", TOOL_FULL])
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    LOG_ROOT.mkdir(parents=True, exist_ok=True)
-    GLOBAL_LOG.touch(exist_ok=True)
+    module_to_methods = build_module_to_methods(loc_meta, TARGETS_CSV, GLOBAL_LOG, OUT_JSON)
 
-    # --- BUILD MODULE→METHOD MAP ---
-    if not LOC_METHOD_META.exists():
-        log("ERROR: loc-method.meta not found!", GLOBAL_LOG)
-        return
-    loc_meta = json.loads(LOC_METHOD_META.read_text(encoding="utf-8"))
-    mapping_json = OUTPUT_DIR / "module_method_map.json"
-    module_to_methods = build_module_to_methods(loc_meta, TARGETS_CSV, GLOBAL_LOG, mapping_json)
+    # Run commands per module/method
+    for module, items in module_to_methods.items():
+        for item in items:
+            mid = item.get("methodId", "")
+            line = item.get("line", "")
+            ctext = item.get("constraint_text", "")
+            ctext_arg = f" -Dctext='{ctext}'" if ctext else ""
 
-    # --- RUN PIPELINE ---
-    for module, methods in module_to_methods.items():
-        log(f"=== MODULE: {module} ({len(methods)} methods) ===", GLOBAL_LOG)
-
-        info_root = Path(f"/tmp/chatunitest-info/{get_project_name()}/{module}/build")
-        info_root.mkdir(parents=True, exist_ok=True)
-        log(f"Ensured build dir: {info_root}", GLOBAL_LOG)
-
-        install_log = OUTPUT_DIR / f"{module}-install.log"
-        rc = run_silent(
-            f"source /app/init_env.sh && mvn -B $MVN_BASE_OPTIONS install -pl {module} -am -DskipTests",
-            install_log, cwd=TOOL_DIR,
-        )
-        status = "OK" if rc == 0 else "FAIL"
-        log(f"[{status}] Installed module {module}", GLOBAL_LOG)
-
-        gen_total = 0.0
-        for item in methods:
-            mid = item["methodId"]
-            line = item["line"]
-            ctext = item["constraint_text"]
-
-            key = sha1_key(mid)
-            method_dir = LOG_ROOT / key
-            method_dir.mkdir(parents=True, exist_ok=True)
-            (method_dir / "method.txt").write_text(mid + "\n", encoding="utf-8")
-            method_log = method_dir / f"{TOOL_FULL}.log"
+            offset = item.get("offset")
+            methodsig = item.get("methodsig", "")
+            offset_arg = f" -Doffset={offset}" if offset is not None else ""
+            methodsig_arg = f" -Dmethodsig='{methodsig}'" if methodsig else ""
 
             # === Correctly split class & method ===
             if "#" in mid:
@@ -194,10 +217,10 @@ def main():
             else:
                 cls, mname = mid, ""
 
-            # ============================================================
-            # >>> CHANGED: Make -Dctext optional
-            # ============================================================
-            ctext_arg = f" -Dctext='{ctext}'" if CTEXT_PUSH and ctext else ""
+            # Build method directory
+            method_dir = OUTPUT_DIR / "gentest" / sha1(f"{module}:{mid}:{line}")
+            method_dir.mkdir(parents=True, exist_ok=True)
+            logfile = method_dir / "chatunitest_method.log"
 
             cmd = (
                 f"source /app/init_env.sh && "
@@ -206,40 +229,20 @@ def main():
                 f"-Durl=https://api.openai.com/v1/chat/completions "
                 f"-DonlyTargetLines=true -DphaseType=HITS "
                 f"-DselectClass={cls} -DselectMethod={mname} "
-                f"-Dlines={line}{ctext_arg} -Dtemperature=0"
+                f"-Dlines={line}{ctext_arg}{offset_arg}{methodsig_arg} -Dtemperature=0"
             )
 
             module_dir = TOOL_DIR if module in ["", "."] else TOOL_DIR / module
 
-            # === Visible logs for current command ===
             log(f"\n[RUN] Executing in: {module_dir}", GLOBAL_LOG)
             log(f"[RUN] Command: {cmd}\n", GLOBAL_LOG)
-            print(f"\n>>> Running ChatUniTest in: {module_dir}")
-            print(f">>> Command: {cmd}\n")
+            print(f"\n>>> Running in {module_dir}\n{cmd}\n")
 
-            t0 = time.time()
-            rc = run_silent(cmd, method_log, cwd=module_dir)
-            gen_total += time.time() - t0
+            rc = run_silent(cmd, logfile, cwd=module_dir)
+            if rc != 0:
+                log(f"[WARN] Command failed with rc={rc} for methodId={mid}", GLOBAL_LOG)
 
-            status = "OK" if rc == 0 else "FAIL"
-            log(f"[{status}] {mid} → {method_log}", GLOBAL_LOG)
-            time.sleep(60)
-
-        module_dur = int(gen_total)
-        log(f"Module {module} generation time: {module_dur//60}m {module_dur%60}s", GLOBAL_LOG)
-
-    tmp_info = Path("/tmp/chatunitest-info")
-    info_zip = OUTPUT_DIR / "chatunitest-info.zip"
-    runtime_zip = OUTPUT_DIR / "runtimelog.zip"
-    zip_and_move(tmp_info, info_zip, GLOBAL_LOG)
-    zip_and_move(LOG_ROOT, runtime_zip, GLOBAL_LOG)
-    if tmp_info.exists():
-        shutil.rmtree(tmp_info, ignore_errors=True)
-        log(f"Cleaned {tmp_info}", GLOBAL_LOG)
-
-    total_dur = int(time.time() - start_total)
-    log(f"{TOOL_FULL.upper()} pipeline complete", GLOBAL_LOG)
-    log(f"Total runtime: {total_dur//3600:02d}:{(total_dur%3600)//60:02d}:{total_dur%60:02d}", GLOBAL_LOG)
+    log("[INFO] Done.", GLOBAL_LOG)
 
 
 if __name__ == "__main__":
